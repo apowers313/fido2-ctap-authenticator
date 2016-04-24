@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h> // for sleep()
 #include <stdlib.h> // for malloc() & free()
+#include <string.h> // for strlen()
 // BSD Queues: just a bunch of macros for linked lists; should be broadly available and / or easily portable
 // XXX - not sure that BSD Queues are thread safe...
 #include <sys/queue.h>
@@ -55,12 +56,11 @@ unsigned char *receiveCborMessage(unsigned int *len) {
 	newMsg	= STAILQ_FIRST(&msg_queue_head);
 	STAILQ_REMOVE_HEAD(&msg_queue_head, list);
 	printf ("receiveCborMessage got message: \"%s\"\n", newMsg->cborMsg);
+	cborBuf = newMsg->cborMsg;
 	free(newMsg);
 
-	*len = 4;
-	cborBuf = malloc (20);
-	sprintf ((char *)cborBuf, "beer");
-	return NULL;
+	*len = strlen ((char *)cborBuf);
+	return cborBuf;
 }
 
 static void processCborRequest(unsigned char *msg) {

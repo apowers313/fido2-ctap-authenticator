@@ -69,12 +69,15 @@ CtapAuth.prototype.receiveCborMessage = function(cb) {
 	var retLen = ref.alloc('int', 7);
 
 	this.lib.receiveCborMessage.async (retLen, function (err, res) {
-		console.log ("receiveCborMessage done");
 		if (err) return cb (err);
 		var len = retLen.deref();
-		console.log ("Res is:", res);
-		console.log ("Len is:", len);
-		console.log ("Result: ", str);
+
+		if (res.isNull()) {
+			console.log ("receiveCborMessage: received NULL message");
+			cb (Error ("receiveCborMessage: received NULL message"));
+		}
+		res = ref.reinterpret (res, len, 0);
+		console.log ("receiveCborMessage:", res.toString());
 		cb (err, res);
 	});
 };
