@@ -1,0 +1,3 @@
+[submodule "src/libcbor"]
+	path = src/libcbor
+	url = https://github.com/PJK/libcbor.git

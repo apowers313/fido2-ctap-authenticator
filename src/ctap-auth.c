@@ -5,6 +5,10 @@
 // BSD Queues: just a bunch of macros for linked lists; should be broadly available and / or easily portable
 // XXX - not sure that BSD Queues are thread safe...
 #include <sys/queue.h>
+#include <openssl/conf.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
+#include "cbor.h"
 
 static void processCborRequest(unsigned char *msg);
 struct msgQueue {
@@ -20,12 +24,28 @@ int init(void *param) {
 	// printf ("Doing init\n");
 	STAILQ_INIT(&msg_queue_head);
 	// sleep(1);
+
+	/* Load the human readable error strings for libcrypto */
+	ERR_load_crypto_strings();
+	/* Load all digest and cipher algorithms */
+	OpenSSL_add_all_algorithms();
+	/* Load config file, and other important initialisation */
+	OPENSSL_config(NULL);
+
 	return 0;
 }
 
 int shutdown(void *param) {
 	// param is ignored
 	// printf ("Doing shutdown\n");
+
+	/* Removes all digests and ciphers */
+	EVP_cleanup();
+	/* if you omit the next, a small leak may be left when you make use of the BIO (low level API) for e.g. base64 transformations */
+	CRYPTO_cleanup_all_ex_data();
+	/* Remove error strings */
+	ERR_free_strings();
+
 	return 0;
 }
 
@@ -67,8 +87,35 @@ unsigned char *receiveCborMessage(unsigned int *len) {
 }
 
 static void processCborRequest(unsigned char *msg) {
+	// /* Assuming `buffer` contains `info.st_size` bytes of input data */
+	// struct cbor_load_result result;
+	// cbor_item_t * item = cbor_load(buffer, length, &result);
+	// /* Pretty-print the result */
+	// cbor_describe(item, stdout);
+	// fflush(stdout);
+	// /* Deallocate the result */
+	// cbor_decref(&item);
+
+	// send messge
 	struct msgQueue* response = (struct msgQueue *)malloc (sizeof (struct msgQueue));
 	response->cborMsg = (unsigned char *)strdup ((char *)msg);
 	response->len = strlen ((char *)msg);
 	STAILQ_INSERT_TAIL(&msg_queue_head, response, list);
+}
+
+static void createMakeCredentialResponse() {
+	// /* Preallocate the map structure */
+	// cbor_item_t * root = cbor_new_definite_map(2);
+	// /* Add the content */
+	// cbor_map_add(root, (struct cbor_pair) {
+	// 	.key = cbor_move(cbor_build_string("Is CBOR awesome?")),
+	// 	 .value = cbor_move(cbor_build_bool(true))
+	// });
+	// cbor_map_add(root, (struct cbor_pair) {
+	// 	.key = cbor_move(cbor_build_uint8(42)),
+	// 	 .value = cbor_move(cbor_build_string("Is the answer"))
+	// });
+	// /* Output: `length` bytes of data in the `buffer` */
+	// unsigned char * buffer;
+	// size_t buffer_size, length = cbor_serialize_alloc(root, &buffer, &buffer_size);
 }
