@@ -10,7 +10,8 @@
 #include <openssl/err.h>
 #include "cbor.h"
 
-static void processCborRequest(unsigned char *msg);
+static void processCborRequest(unsigned char *msg, unsigned int len);
+static void parseMakeCredentialRequest(unsigned char *msg, unsigned int len);
 struct msgQueue {
 	unsigned char *cborMsg;
 	int len;
@@ -51,7 +52,7 @@ int shutdown(void *param) {
 
 int sendCborMessage(unsigned char *cborBuf, int len) {
 	// printf ("Sending CBOR message, len %d\n", len);
-	processCborRequest (cborBuf);
+	processCborRequest (cborBuf, len);
 	return 0;
 }
 
@@ -86,21 +87,48 @@ unsigned char *receiveCborMessage(unsigned int *len) {
 	return cborBuf;
 }
 
-static void processCborRequest(unsigned char *msg) {
-	// /* Assuming `buffer` contains `info.st_size` bytes of input data */
-	// struct cbor_load_result result;
-	// cbor_item_t * item = cbor_load(buffer, length, &result);
-	// /* Pretty-print the result */
-	// cbor_describe(item, stdout);
-	// fflush(stdout);
-	// /* Deallocate the result */
-	// cbor_decref(&item);
+enum {
+	MAKE_CREDENTIAL = 1,
+	GET_ATTESTATION,
+	CANCEL,
+	GET_INFO
+};
+
+static void processCborRequest(unsigned char *msg, unsigned int len) {
+	switch (msg[0]) {
+		case MAKE_CREDENTIAL:
+			printf ("make credential\n");
+			parseMakeCredentialRequest(&msg[1], len);
+			break;
+		case GET_ATTESTATION:
+			printf("get attestation\n");
+			break;
+		case CANCEL:
+			printf("cancel\n");
+			break;
+		case GET_INFO:
+			printf("get info\n");
+			break;
+		default:
+			printf ("processCborRequest: unknown message type\n");
+	}
 
 	// send messge
 	struct msgQueue* response = (struct msgQueue *)malloc (sizeof (struct msgQueue));
 	response->cborMsg = (unsigned char *)strdup ((char *)msg);
 	response->len = strlen ((char *)msg);
 	STAILQ_INSERT_TAIL(&msg_queue_head, response, list);
+}
+
+static void parseMakeCredentialRequest(unsigned char *msg, unsigned int len) {
+	/* Assuming `buffer` contains `info.st_size` bytes of input data */
+	struct cbor_load_result result;
+	cbor_item_t * item = cbor_load(msg, len, &result);
+	/* Pretty-print the result */
+	cbor_describe(item, stdout);
+	fflush(stdout);
+	/* Deallocate the result */
+	cbor_decref(&item);
 }
 
 static void createMakeCredentialResponse() {

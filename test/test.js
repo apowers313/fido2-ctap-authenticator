@@ -1,6 +1,7 @@
 var assert = require("chai").assert;
 var sinon = require("sinon");
 var Auth = require("../ctap-auth.js");
+var helpers = require ("./helpers/helpers.js");
 
 describe("Basic tests", function() {
 	it("does init", function() {
@@ -26,17 +27,17 @@ describe("Basic tests", function() {
 
 	it("send message", function(done) {
 		var a = new Auth("./lib/ctap-auth.dylib");
-		a.sendCborMessage(new Buffer("testing 1 2 3\0"), done);
+		a.sendCborMessage(new Buffer(helpers.authenticatorMakeCredentialCommandCbor), done);
 	});
 
-	it("get message", function(done) {
+	it.only("get message", function(done) {
 		this.timeout(15000);
 		var a = new Auth("./lib/ctap-auth.dylib");
 		a.receiveCborMessage(function(err, res) {
 			console.log("a.receiveCborMessage done in Mocha:", res);
 			done(err, res);
 		});
-		a.sendCborMessage(new Buffer("can I go to sleep now?\0"), function(err, res) {
+		a.sendCborMessage(new Buffer(helpers.authenticatorMakeCredentialCommandCbor), function(err, res) {
 			// console.log("Done sending message");
 		});
 	});
