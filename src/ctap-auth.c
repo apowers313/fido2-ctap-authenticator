@@ -9,6 +9,7 @@
 static void processCborRequest(unsigned char *msg);
 struct msgQueue {
 	unsigned char *cborMsg;
+	int len;
 	STAILQ_ENTRY(msgQueue) list;
 };
 
@@ -29,7 +30,7 @@ int shutdown(void *param) {
 }
 
 int sendCborMessage(unsigned char *cborBuf, int len) {
-	printf ("Sending CBOR message, len %d\n", len);
+	// printf ("Sending CBOR message, len %d\n", len);
 	processCborRequest (cborBuf);
 	return 0;
 }
@@ -47,28 +48,27 @@ unsigned char *receiveCborMessage(unsigned int *len) {
 	}
 	*len = 0;
 
+	// poll for message
+	// semaphores would make this more efficient, bue perhaps less portable
 	while (STAILQ_EMPTY (&msg_queue_head)) {
-		printf ("receiveCborMessage waiting for message...\n");
+		// printf ("receiveCborMessage waiting for message...\n");
 		sleep(1);
 	}
 
+	// pull a response message off the queue
 	struct msgQueue *newMsg;
 	newMsg	= STAILQ_FIRST(&msg_queue_head);
 	STAILQ_REMOVE_HEAD(&msg_queue_head, list);
-	printf ("receiveCborMessage got message: \"%s\"\n", newMsg->cborMsg);
 	cborBuf = newMsg->cborMsg;
+	*len = newMsg->len;
 	free(newMsg);
 
-	*len = strlen ((char *)cborBuf);
 	return cborBuf;
 }
 
 static void processCborRequest(unsigned char *msg) {
-	printf ("msg is: %s\n", msg);
 	struct msgQueue* response = (struct msgQueue *)malloc (sizeof (struct msgQueue));
-	response->cborMsg = malloc(3);
-	response->cborMsg[0] = 'h';
-	response->cborMsg[1] = 'i';
-	response->cborMsg[2] = 0;
+	response->cborMsg = (unsigned char *)strdup ((char *)msg);
+	response->len = strlen ((char *)msg);
 	STAILQ_INSERT_TAIL(&msg_queue_head, response, list);
 }

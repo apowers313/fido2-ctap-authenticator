@@ -55,10 +55,8 @@ CtapAuth.prototype.shutdown = function(params) {
 CtapAuth.prototype.sendCborMessage = function(msg, cb) {
 	// TODO: msg may be one of: Array, TypedArray or Buffer
 	this.lib.sendCborMessage.async (msg, msg.length, function (err, res) {
-		console.log ("sendCborMessage done");
 		if (err) return cb (err);
 
-		console.log (res);
 		cb (err, res);
 	});
 };
